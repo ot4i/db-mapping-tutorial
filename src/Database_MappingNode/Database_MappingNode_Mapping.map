@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><mappingRoot xmlns="http://www.ibm.com/2008/ccl/Mapping" domainID="com.ibm.msl.mapping.xml" domainIDExtension="mb" mainMap="true" targetNamespace="default" version="8.0.5.0" xmlns:map="default">
+    <inlinedXMLSchema><![CDATA[<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"> 
+    <xsd:element name="Message" nillable="true" type="xsd:string"/> 
+    <xsd:element name="SALARY" nillable="true" type="xsd:decimal"/> 
+    <xsd:element name="JOB" nillable="true" type="xsd:string"/> 
+    <xsd:element name="WORKDEPT" nillable="true" type="xsd:string"/> 
+    <xsd:element name="LASTNAME" nillable="true" type="xsd:string"/> 
+    <xsd:element name="FIRSTNAME" nillable="true" type="xsd:string"/> 
+</xsd:schema>]]></inlinedXMLSchema>
+    <input path="jar:file://!com/ibm/etools/mft/map/xsds/predefined/JsonDomainMsg.xsd" var="var"/>
+    <input path="jar:file://!com/ibm/msl/mapping/rdb/xsds/dbreturn.xsd" var="var3"/>
+    <input inlinedXMLSchema="true" path="../schema_0.xsd" var="var2"/>
+    <output path="jar:file://!com/ibm/etools/mft/map/xsds/predefined/JsonDomainMsg.xsd" var="var1"/>
+    <output path="db:table(/EMPLOYEE.dbm,EMPLOYEE,IIBADMIN,EMPLOYEE_RECORD)" var="EMPLOYEERECORD"/>
+    <namespaces>
+        <namespace kind="extension" prefix="fn" uri="http://www.w3.org/2005/xpath-functions"/>
+    </namespaces>
+    <generation engine="xquery"/>
+    <mappingDeclaration name="Database_MappingNode_Mapping">
+        <input namespace="http://www.ibm.com/iib/msl/json" path="$var/mb:msg(JSON,assembly,JSON,Properties)" var="MessageAssembly">
+            <cast castType="userDefined" path="$MessageAssembly/JSON/Data/type('anyType')" qualifier="{http://www.ibm.com/iib/msl/json}JSONObject" ref="var" var="anyType"/>
+            <cast castType="userDefined" path="$MessageAssembly/JSON/spath('Data',2)/any" qualifier="FIRSTNAME" ref="var2" var="any"/>
+            <cast castType="userDefined" path="$MessageAssembly/JSON/spath('Data',2)/any" qualifier="LASTNAME" ref="var2" var="any1"/>
+            <cast castType="userDefined" path="$MessageAssembly/JSON/spath('Data',2)/any" qualifier="WORKDEPT" ref="var2" var="any2"/>
+            <cast castType="userDefined" path="$MessageAssembly/JSON/spath('Data',2)/any" qualifier="JOB" ref="var2" var="any3"/>
+            <cast castType="userDefined" path="$MessageAssembly/JSON/spath('Data',2)/any" qualifier="SALARY" ref="var2" var="any4"/>
+        </input>
+        <output namespace="http://www.ibm.com/iib/msl/json" path="$var1/mb:msg(JSON,assembly,JSON,Properties)" var="MessageAssembly1">
+            <cast castType="userDefined" path="$MessageAssembly1/JSON/Data/type('anyType')" qualifier="{http://www.ibm.com/iib/msl/json}JSONObject" ref="var1" var="anyType1"/>
+            <cast castType="userDefined" path="$MessageAssembly1/JSON/spath('Data',2)/any" qualifier="Message" ref="var2" var="any5"/>
+        </output>
+        <output path="$EMPLOYEERECORD/db:insert(fn:false(),EMPNO,FIRSTNAME,LASTNAME,WORKDEPT,JOB,SALARY,CREATION_DATE)" var="dbinsert"/>
+        <move>
+            <input path="$MessageAssembly/Properties"/>
+            <output path="$MessageAssembly1/Properties"/>
+        </move>
+        <transaction>
+            <insert>
+                <input path="$MessageAssembly/JSON/spath('Data',2)"/>
+                <output path="$dbinsert/."/>
+                <move>
+                    <input path="FIRSTNAME[1]"/>
+                    <output path="FIRSTNAME"/>
+                </move>
+                <move>
+                    <input path="LASTNAME[1]"/>
+                    <output path="LASTNAME"/>
+                </move>
+                <move>
+                    <input path="WORKDEPT[1]"/>
+                    <output path="WORKDEPT"/>
+                </move>
+                <move>
+                    <input path="JOB[1]"/>
+                    <output path="JOB"/>
+                </move>
+                <move>
+                    <input path="SALARY[1]"/>
+                    <output path="SALARY"/>
+                </move>
+                <function ref="fn:current-dateTime">
+                    <output path="CREATION_DATE"/>
+                </function>
+            </insert>
+            <return>
+                <input path="$var3/DBInsertReturn"/>
+                <output path="$MessageAssembly1/JSON/spath('Data',2)"/>
+                <function ref="fn:concat">
+                    <input path="NumberOfRowsInserted" var="NumberOfRowsInserted"/>
+                    <output path="Message"/>
+                    <param name="string1" value="'The number of rows inserted into the database was '"/>
+                    <param name="string2" value="$NumberOfRowsInserted"/>
+                </function>
+            </return>
+        </transaction>
+    </mappingDeclaration>
+</mappingRoot>
